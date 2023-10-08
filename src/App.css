@@ -145,6 +145,7 @@ tr {
   font-size: 1rem;
   cursor: pointer;
   transition: box-shadow 0.6s ease;
+  margin-right: 10px;
 }
 
 .button.blue {

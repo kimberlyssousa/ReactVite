@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import { Modal } from "./components/Modal";
+import Parse from 'parse/dist/parse.min.js';
 
 function App() {
   const [openModal, setOpenModal] = useState(false);
@@ -11,9 +12,75 @@ function App() {
   const [clients, setClients] = useState([]);
   const [editingClientIndex, setEditingClientIndex] = useState(null);
 
+  const PARSE_APPLICATION_ID = 'jcJELTa9oGaYid5GP81ChKVjUuwzzcv2uw2Q8nZd';
+  const PARSE_HOST_URL = 'https://parseapi.back4app.com/';
+  const PARSE_JAVASCRIPT_KEY = '3wLfj9zJEWEKc9d84EPcxib6wrPgR2OtltxnqHDr';
+  Parse.initialize(PARSE_APPLICATION_ID, PARSE_JAVASCRIPT_KEY);
+  Parse.serverURL = PARSE_HOST_URL;
+
   useEffect(() => {
-    setClients(getLocalStorage());
+
+    fetchUsers()
   }, []);
+
+  async function fetchUsers() {
+    const query = new Parse.Query("CrudUser")
+    const response = await query.find()
+    console.log(response)
+    setClients(response);
+  }
+
+  async function createDbUser() {
+    try {
+      console.log('entrou')
+      const user = new Parse.Object('CrudUser')
+
+      user.set('name', name);
+      user.set('email', email);
+      user.set('phoneNumber', phoneNumber);
+      user.set('city', city);
+
+      const response = await user.save()
+      console.log(response)
+      setOpenModal(false)
+      fetchUsers()
+      clearFields()
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  async function deleteDbUser(user) {
+    console.log(user)
+    const userToDelete = new Parse.Object('CrudUser');
+    userToDelete.set('objectId', user.id)
+    const hasConfirmed = window.confirm(
+      `Deseja realmente excluir o cliente ${user.attributes.name}`
+    );
+
+    if (!hasConfirmed) {
+      return;
+    }
+    await userToDelete.destroy()
+    fetchUsers()
+  }
+
+  async function updateDbUser(user) {
+    const userToUpdate = new Parse.Object("CrudUser");
+    userToUpdate.set('objectId', user.id);
+    userToUpdate.set("name", name);
+    userToUpdate.set("email", email);
+    userToUpdate.set("phoneNumber", phoneNumber);
+    userToUpdate.set("city", city)
+    try {
+      await userToUpdate.save();
+      clearFields()
+      fetchUsers()
+      setOpenModal(false)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   function handleOpenModal() {
     setOpenModal((prev) => !prev);
@@ -135,11 +202,10 @@ function App() {
 
   const submitForm = (e) => {
     if (typeof editingClientIndex === "number") {
-      updateClient();
+      updateDbUser(clients[editingClientIndex]);
       return;
     }
-
-    createClient(e);
+    createDbUser()
   };
 
   return (
@@ -170,10 +236,10 @@ function App() {
             {clients &&
               clients.map((client, index) => (
                 <tr key={index}>
-                  <td>{client.name}</td>
-                  <td>{client.email}</td>
-                  <td>{client.phoneNumber}</td>
-                  <td>{client.city}</td>
+                  <td>{client.attributes.name}</td>
+                  <td>{client.attributes.email}</td>
+                  <td>{client.attributes.phoneNumber}</td>
+                  <td>{client.attributes.city}</td>
                   <td className="options">
                     <button
                       type="button"
@@ -183,10 +249,10 @@ function App() {
                         setEditingClientIndex(index);
                         handleOpenModal();
 
-                        setCity(client.city);
-                        setName(client.name);
-                        setEmail(client.email);
-                        setPhoneNumber(client.phoneNumber);
+                        setCity(client.attributes.city);
+                        setName(client.attributes.name);
+                        setEmail(client.attributes.email);
+                        setPhoneNumber(client.attributes.phoneNumber);
                       }}
                     >
                       Editar
@@ -195,7 +261,7 @@ function App() {
                       type="button"
                       className="button red"
                       id="delete-${index}"
-                      onClick={() => deleteClient(index)}
+                      onClick={() => deleteDbUser(client)}
                     >
                       Excluir
                     </button>

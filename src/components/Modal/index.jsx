@@ -20,10 +20,6 @@ export function Modal({
           </span>
         </header>
         <form
-          onSubmit={(e) => {
-            console.log(e);
-            save(e);
-          }}
           id="form"
           className="modal-form"
         >
@@ -66,8 +62,10 @@ export function Modal({
             onChange={(e) => handleOnChangeInputValue("city", e.target.value)}
             required
           />
-          <footer className="modal-footer">
-            <button type="submit" id="salvar" className="button green">
+          
+        </form>
+        <footer className="modal-footer">
+            <button onClick={save} id="salvar" className="button green">
               Salvar
             </button>
             <button
@@ -78,7 +76,6 @@ export function Modal({
               Cancelar
             </button>
           </footer>
-        </form>
       </div>
     </div>
   );
